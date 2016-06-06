@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from jsonobject import (
+from dicty import (
     DictObject, Field, DatetimeField, DateField,
     TypedObjectField, TypedListField, TypedDictField,
     FieldError, ShadowField, IntegerField, FloatField, StringField,
@@ -297,8 +297,8 @@ def test_references():
         pass
 
     class Foo(DictObject):
-        obj1 = TypedObjectField('test_jsonobject.Object1')
-        obj2 = TypedObjectField('test_jsonobject.ObjectXXX')
+        obj1 = TypedObjectField('test_dicty.Object1')
+        obj2 = TypedObjectField('test_dicty.ObjectXXX')
 
     obj = Foo()
     assert isinstance(obj.obj1, Object1)

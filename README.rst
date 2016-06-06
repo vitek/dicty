@@ -4,12 +4,12 @@ Sample usage
 
  .. code-block:: python
 
-    import jsonobject
+    import dicty
 
 
-    class MyDoc(jsonobject.DictObject):
-        prop1 = jsonobject.StringField()
-        prop2 = jsonobject.IntegerField()
+    class MyDoc(dicty.DictObject):
+        prop1 = dicty.StringField()
+        prop2 = dicty.IntegerField()
 
 
     doc = MyDoc(prop1='foo', prop2=123)
@@ -18,7 +18,7 @@ Sample usage
 
     doc = MyDoc.fromjson({'prop1': 'foo', 'prop2': 123})
 
-    # would raise jsonobject.FieldError here
+    # would raise dicty.FieldError here
     doc = MyDoc.fromjson({'prop1': 123, 'prop2': 123})
 
 
@@ -27,14 +27,14 @@ Nested Objects
 
  .. code-block:: python
 
-    import jsonobject
+    import dicty
 
 
-    class Foo(jsonobject.DictObject):
-        class Bar(jsonobject.DictObject):
-            prop = jsonobject.StringField()
+    class Foo(dicty.DictObject):
+        class Bar(dicty.DictObject):
+            prop = dicty.StringField()
 
-        bar = jsonobject.TypedObjectField(Bar)
+        bar = dicty.TypedObjectField(Bar)
 
     obj = Foo()
     obj.bar.prop = 123

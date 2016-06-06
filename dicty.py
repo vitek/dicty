@@ -285,7 +285,7 @@ class TypedListField(BaseTypedField):
         return value
 
     def jsonize(self, obj):
-        if self.name:
+        if self.name is None:
             return [i.jsonize() for i in obj]
         return [i.jsonize() for i in obj[self.name]]
 

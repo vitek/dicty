@@ -304,3 +304,15 @@ def test_references():
     assert isinstance(obj.obj1, Object1)
     with pytest.raises(JSONObjectRuntimeError):
         obj.obj2
+
+
+def test_dict_of_lists_of_objects_regression():
+    class Foo(DictObject):
+        foo = StringField()
+
+    class Bar(DictObject):
+        foos = TypedDictField(
+            TypedListField(Foo), optional=True)
+
+    o = Bar.fromjson({'foos': {'x':[{'foo': 'foo'}, {'foo': 'bar'}]}})
+    assert o.jsonize() == {'foos': {'x':[{'foo': 'foo'}, {'foo': 'bar'}]}}

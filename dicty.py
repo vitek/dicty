@@ -382,6 +382,7 @@ class DictField(BasicTypeField):
     def getdefault(self, obj):
         return {}
 
+
 class BooleanField(BasicTypeField):
     def __init__(self, *args, **kwargs):
         super(BooleanField, self).__init__((bool,), *args, **kwargs)

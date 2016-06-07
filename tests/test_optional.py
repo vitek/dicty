@@ -31,7 +31,7 @@ def test_default():
 
 def test_default_side_effect():
     class Object(dicty.DictObject):
-        aaa = dicty.ListField(optional=True)
+        aaa = dicty.Field(optional=True, default=[])
 
     obj = Object()
     assert not obj.hasattr(Object.aaa.attname)
@@ -39,3 +39,12 @@ def test_default_side_effect():
     assert obj.aaa == []
     assert obj.hasattr(Object.aaa.attname)
     assert obj['aaa'] == []
+
+
+def test_default_func():
+    class Object(dicty.DictObject):
+        aaa = dicty.Field(default_func=lambda obj: 123, optional=True)
+
+    obj = Object()
+    assert obj.aaa == 123
+    assert obj['aaa'] == 123

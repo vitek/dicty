@@ -1,5 +1,3 @@
-import datetime
-
 import pytest
 
 import dicty
@@ -55,36 +53,6 @@ def test_filters():
     assert obj.foo == 'XXX'
     assert obj._shadow == {'foo': 'XXX'}
     assert obj == {'foo': 'xxx'}
-
-
-def test_datetime_field():
-    class Object(dicty.DictObject):
-        bday = dicty.DatetimeField(name='bDay')
-
-    obj = Object(bday=datetime.datetime(1985, 6, 12, 11, 22, 33))
-    assert obj == {'bDay': '1985-06-12 11:22:33'}
-    assert obj.bday == datetime.datetime(1985, 6, 12, 11, 22, 33)
-
-    obj = Object.fromjson({'bDay': '1985-06-12 11:22:33'})
-    assert obj == {'bDay': '1985-06-12 11:22:33'}
-    assert obj.bday == datetime.datetime(1985, 6, 12, 11, 22, 33)
-
-
-def test_datetime_field():
-    class Object(dicty.DictObject):
-        bday = dicty.DateField(name='bDay')
-
-    obj = Object()
-    obj.bday = datetime.date(1985, 6, 12)
-    assert obj == {'bDay': '1985-06-12'}
-
-    obj = Object(bday=datetime.date(1985, 6, 12))
-    assert obj == {'bDay': '1985-06-12'}
-    assert obj.bday == datetime.date(1985, 6, 12)
-
-    obj = Object.fromjson({'bDay': '1985-06-12'})
-    assert obj == {'bDay': '1985-06-12'}
-    assert obj.bday == datetime.date(1985, 6, 12)
 
 
 def test_typed_list_field():

@@ -210,25 +210,16 @@ class DatetimeField(ShadowField):
         super(DatetimeField, self).__init__(*args, **kwargs)
 
     def fromjson(self, value):
-        if isinstance(value, datetime.datetime):
-            return value
         return datetime.datetime.strptime(value, self.format)
 
     def tojson(self, value):
         return value.strftime(self.format)
 
 
-class NativeDatetimeField(DatetimeField):
-    def tojson(self, value):
-        return value
-
-
 class DateField(DatetimeField):
     format = '%Y-%m-%d'
 
     def fromjson(self, value):
-        if isinstance(value, datetime.date):
-            return value
         return super(DateField, self).fromjson(value).date()
 
 
@@ -365,6 +356,17 @@ class RegexpStringField(StringField):
             if not self.regexp.match(value):
                 raise ValueError("Does not match regular expression")
         return value
+
+
+class NativeDatetimeField(BasicTypeField):
+    def __init__(self, *args, **kwargs):
+        super(NativeDatetimeField, self).__init__(
+            (datetime.datetime,), *args, **kwargs)
+
+
+class NativeDateField(BasicTypeField):
+    def __init__(self, *args, **kwargs):
+        super(NativeDateField, self).__init__((datetime.date,), *args, **kwargs)
 
 
 class ListField(BasicTypeField):

@@ -22,6 +22,7 @@ def test_typed_object_field():
     assert obj.nested == {}
     obj.nested.foo = 321
     assert obj == {'nested': {'foo': 321}}
+    assert obj.jsonize() == {'nested': {'foo': 321}}
 
     with pytest.raises(dicty.FieldError) as exc:
         Object.fromjson({'nested': 123})

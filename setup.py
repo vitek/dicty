@@ -14,6 +14,7 @@ setup(
     url='https://github.com/vitek/dicty',
     py_modules=['dicty'],
     install_requires=[''],
-    tests_require=['py.test'],
-    test_suite='test',
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
+    test_suite='tests',
 )

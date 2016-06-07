@@ -24,7 +24,7 @@ class FieldError(ValueError):
         return cls(path, exc.message)
 
 
-class JSONObjectRuntimeError(Exception):
+class DictyRuntimeError(Exception):
     pass
 
 
@@ -74,7 +74,7 @@ class JSONMetaObject(type):
         try:
             return cls.objects[type_name]
         except KeyError:
-            raise JSONObjectRuntimeError(
+            raise DictyRuntimeError(
                 "Cannot resolve type {}".format(type_name))
 
 

@@ -32,9 +32,12 @@ declared fields left:
     obj == {'foo': 123, 'bar': 123}
     obj.jsonize() == {'foo': 123}
 
-If you don't like naming scheme in your JSON objects, API, protocol, for
-instance you don't want to use camel-case names in Python. You can choose
-whatever python name you like and manually specify dictionary key:
+Name aliasing
+-------------
+
+If you don't like naming scheme in JSON objects, API and so on. Dicty allows to
+choose whatever python name you like while manually specify dictionary key. For
+instance map camel-case keys to their underscore counterparts:
 
  .. code-block:: python
 
@@ -45,6 +48,40 @@ whatever python name you like and manually specify dictionary key:
     obj = Foo.fromjson({'propFoo': 123})
     obj.prop_foo
     obj['propFoo']
+
+
+Subclassing
+-----------
+
+`DictObject` supports subclassing:
+
+  .. code-block:: python
+
+    class Foo(dicty.DictObject):
+        foo = dicty.Field()
+
+
+    class Bar(Foo):
+        bar = dicty.Field()
+
+
+    obj = Bar.fromjson({'foo': 1, 'bar': 2})
+    print obj.jsonize()  # {'foo': 1, 'bar': 2}
+
+Mixins are supported as well:
+
+  .. code-block:: python
+
+    class FooMixIn(object):
+        foo = dicty.Field()
+
+
+    class Bar(dicty.DictObject, FooMixIn):
+        bar = dicty.Field()
+
+
+    obj = Bar.fromjson({'foo': 1, 'bar': 2})
+    print obj.jsonize()  # {'foo': 1, 'bar': 2}
 
 
 Fields
@@ -192,3 +229,6 @@ Nested Objects
     obj = Foo()
     obj.bar.prop = 123
     print obj # {'bar': {'prop': 123}}
+
+
+.. _CornerApp: https://cornerapp.com/

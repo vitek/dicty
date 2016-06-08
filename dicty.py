@@ -51,15 +51,33 @@ class JSONMetaObject(type):
     objects = {}
 
     def __new__(mcs, name, bases, attrs):
-        fields = {}
-        for attname, value in attrs.iteritems():
-            if isinstance(value, Field):
-                if value.attname is None:
-                    value.attname = attname
-                if value.key is None:
-                    value.key = value.attname
-                fields[attname] = value
-        attrs['_fields'] = fields
+        fields = []
+        lookup_attrs = [attrs]
+        for base in bases:
+            if issubclass(base, DictObject):
+                fields.extend(getattr(base, '_fields', {}).values())
+            else:
+                lookup_attrs.append(base.__dict__)
+
+        for type_attrs in lookup_attrs:
+            for attname, value in type_attrs.iteritems():
+                if isinstance(value, Field):
+                    if value.attname is None:
+                        value.attname = attname
+                    if value.key is None:
+                        value.key = value.attname
+                    fields.append(value)
+
+        keys_seen = set()
+        fields_index = {}
+        for field in fields:
+            if field.attname in fields_index or field.key in keys_seen:
+                raise DictyRuntimeError(
+                    'Duplicate declaration of {} field with key {}'.format(
+                        repr(field.attname), repr(field.key)))
+            fields_index[field.attname] = field
+            keys_seen.add(field.key)
+        attrs['_fields'] = fields_index
         obj = type.__new__(mcs, name, bases, attrs)
         mcs.register_object(obj)
         return obj

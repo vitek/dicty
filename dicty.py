@@ -52,13 +52,13 @@ class JSONMetaObject(type):
 
     def __new__(mcs, name, bases, attrs):
         fields = {}
-        for key, value in attrs.iteritems():
+        for attname, value in attrs.iteritems():
             if isinstance(value, Field):
                 if value.attname is None:
-                    value.attname = key
-                if value.name is None:
-                    value.name = value.attname
-                fields[key] = value
+                    value.attname = attname
+                if value.key is None:
+                    value.key = value.attname
+                fields[attname] = value
         attrs['_fields'] = fields
         obj = type.__new__(mcs, name, bases, attrs)
         mcs.register_object(obj)
@@ -88,7 +88,7 @@ class DictObject(dict):
             setattr(self, key, value)
 
     def hasattr(self, attname):
-        return self._fields[attname].name in self
+        return self._fields[attname].key in self
 
     def validate(self):
         for prop in self._fields.itervalues():
@@ -97,8 +97,8 @@ class DictObject(dict):
     def jsonize(self):
         json = {}
         for field in self._fields.itervalues():
-            if field.name in self:
-                json[field.name] = field.jsonize(self)
+            if field.key in self:
+                json[field.key] = field.jsonize(self)
         return json
 
     @classmethod
@@ -111,35 +111,35 @@ class DictObject(dict):
 
 class Field(object):
     attname = None   # Python attribute name
-    name = None      # Name as in JSON document
+    key = None       # Dictionary key
 
-    def __init__(self, name=None, filters=(), optional=False,
+    def __init__(self, key=None, filters=(), optional=False,
                  default=None, default_func=None):
-        self.name = name
+        self.key = key
         self.optional = optional
         self.filters = filters
         self._default = default
         self._default_func = default_func
 
     def __set__(self, obj, value):
-        obj[self.name] = value
+        obj[self.key] = value
 
     def __get__(self, obj, type=None):
         if obj is None:
             return self
         try:
-            return obj[self.name]
+            return obj[self.key]
         except KeyError:
             value = self.getdefault(obj)
             # Store non-hashable object or objects returned by default_func()
             # Hard to understand implicit logic
             if (getattr(value, '__hash__', None) is None or
                 self._default_func is not None):
-                obj[self.name] = value
+                obj[self.key] = value
             return value
 
     def __delete__(self, obj):
-        del obj[self.name]
+        del obj[self.key]
 
     def getdefault(self, obj):
         if self._default_func is not None:
@@ -156,24 +156,24 @@ class Field(object):
         return value
 
     def run_filters(self, obj):
-        value = self.fromjson(obj[self.name])
+        value = self.fromjson(obj[self.key])
         for filter in self.filters:
             value = filter(value)
-        obj[self.name] = value
+        obj[self.key] = value
 
     def validate(self, obj):
-        if self.name in obj:
+        if self.key in obj:
             try:
                 self.run_filters(obj)
             except ValueError, e:
                 _, _, tb = sys.exc_info()
-                raise FieldError.nested(self.name, e), None, tb
+                raise FieldError.nested(self.key, e), None, tb
         else:
             if not self.optional:
-                raise FieldError(self.name, "Is required")
+                raise FieldError(self.key, "Is required")
 
     def jsonize(self, obj):
-        return obj[self.name]
+        return obj[self.key]
 
 
 class ShadowField(Field):
@@ -181,7 +181,7 @@ class ShadowField(Field):
         return value
 
     def run_filters(self, obj):
-        value = self.fromjson(obj[self.name])
+        value = self.fromjson(obj[self.key])
         for filter in self.filters:
             value = filter(value)
         obj._shadow[self.attname] = value
@@ -189,7 +189,7 @@ class ShadowField(Field):
     def __set__(self, obj, value):
         json_value = self.tojson(value)
         obj._shadow[self.attname] = value
-        obj[self.name] = json_value
+        obj[self.key] = json_value
 
     def __get__(self, obj, type=None):
         if obj is None:
@@ -245,7 +245,7 @@ class BaseTypedField(Field):
 class TypedObjectField(BaseTypedField):
     def getdefault(self, obj):
         value = self.type()
-        obj[self.name] = value
+        obj[self.key] = value
         return value
 
     def fromjson(self, value):
@@ -254,7 +254,7 @@ class TypedObjectField(BaseTypedField):
         return self.instantiate(value)
 
     def jsonize(self, obj):
-        return obj[self.name].jsonize()
+        return obj[self.key].jsonize()
 
 
 class TypedListField(BaseTypedField):
@@ -272,13 +272,13 @@ class TypedListField(BaseTypedField):
 
     def getdefault(self, obj):
         value = []
-        obj[self.name] = value
+        obj[self.key] = value
         return value
 
     def jsonize(self, obj):
-        if self.name is None:
+        if self.key is None:
             return [i.jsonize() for i in obj]
-        return [i.jsonize() for i in obj[self.name]]
+        return [i.jsonize() for i in obj[self.key]]
 
 
 class TypedDictField(BaseTypedField):
@@ -296,12 +296,12 @@ class TypedDictField(BaseTypedField):
 
     def getdefault(self, obj):
         value = {}
-        obj[self.name] = value
+        obj[self.key] = value
         return value
 
     def jsonize(self, obj):
         return {key: self.type.jsonize(value)
-                for key, value in obj[self.name].iteritems()}
+                for key, value in obj[self.key].iteritems()}
 
 
 class BasicTypeField(Field):

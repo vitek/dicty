@@ -7,7 +7,7 @@ import dicty
 
 def test_datetime_field():
     class Object(dicty.DictObject):
-        bday = dicty.DatetimeField(name='bDay')
+        bday = dicty.DatetimeField('bDay')
 
     obj = Object(bday=datetime.datetime(1985, 6, 12, 11, 22, 33))
     assert obj == {'bDay': '1985-06-12 11:22:33'}
@@ -20,7 +20,7 @@ def test_datetime_field():
 
 def test_date_field():
     class Object(dicty.DictObject):
-        bday = dicty.DateField(name='bDay')
+        bday = dicty.DateField('bDay')
 
     obj = Object()
     obj.bday = datetime.date(1985, 6, 12)
@@ -36,7 +36,7 @@ def test_date_field():
 
 def test_native_datetime():
     class Object(dicty.DictObject):
-        bday = dicty.NativeDatetimeField(name='bDay')
+        bday = dicty.NativeDatetimeField('bDay')
 
     obj = Object.fromjson({'bDay': datetime.datetime(1985, 6, 12, 11, 22, 33)})
     assert obj == {'bDay': datetime.datetime(1985, 6, 12, 11, 22, 33)}
@@ -45,7 +45,7 @@ def test_native_datetime():
 
 def test_native_date():
     class Object(dicty.DictObject):
-        bday = dicty.NativeDateField(name='bDay')
+        bday = dicty.NativeDateField('bDay')
 
     obj = Object.fromjson({'bDay': datetime.date(1985, 6, 12)})
     assert obj == {'bDay': datetime.date(1985, 6, 12)}

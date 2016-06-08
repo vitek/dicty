@@ -6,7 +6,7 @@ import dicty
 def test_simple():
     class Object(dicty.DictObject):
         aaa = dicty.Field()
-        bbb = dicty.Field(name='ccc')
+        bbb = dicty.Field('ccc')
 
     assert isinstance(Object.aaa, dicty.Field)
 

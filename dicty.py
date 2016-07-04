@@ -122,7 +122,7 @@ class JSONMetaObject(type):
             return cls.objects[type_name]
         except KeyError:
             raise DictyRuntimeError(
-                "Cannot resolve type {}".format(type_name))
+                'Cannot resolve type {}'.format(type_name))
 
 
 @base_with_metaclass(JSONMetaObject)
@@ -131,7 +131,7 @@ class DictObject(dict):
         self._shadow = {}
         for key, value in kwargs.iteritems():
             if key not in self._fields:
-                raise AttributeError("Unknown field `{}` given".format(key))
+                raise AttributeError('Unknown field `{}` given'.format(key))
             setattr(self, key, value)
 
     def hasattr(self, attname):
@@ -198,7 +198,7 @@ class Field(object):
 
     @property
     def not_set_error(self):
-        return AttributeError("field {} is not set".format(self.attname))
+        return AttributeError('field {} is not set'.format(self.attname))
 
     def fromjson(self, value):
         return value
@@ -218,7 +218,7 @@ class Field(object):
                 raise FieldError.nested(self.key, e), None, tb
         else:
             if not self.optional:
-                raise FieldError(self.key, "Is required")
+                raise FieldError(self.key, 'Is required')
 
     def jsonize(self, obj):
         return obj[self.key]
@@ -298,7 +298,7 @@ class TypedObjectField(BaseTypedField):
 
     def fromjson(self, value):
         if not isinstance(value, dict):
-            raise ValueError("must be dictionary")
+            raise ValueError('must be dictionary')
         return self.instantiate(value)
 
     def jsonize(self, obj):
@@ -310,7 +310,7 @@ class TypedListField(BaseTypedField):
 
     def fromjson(self, value):
         if not isinstance(value, list):
-            raise ValueError("must be list")
+            raise ValueError('must be list')
         retval = []
         for no, item in enumerate(value):
             try:
@@ -336,7 +336,7 @@ class TypedDictField(BaseTypedField):
 
     def fromjson(self, value):
         if not isinstance(value, dict):
-            raise ValueError("must be dict")
+            raise ValueError('must be dict')
         retval = {}
         for key, item in value.iteritems():
             try:
@@ -366,7 +366,7 @@ class BasicTypeField(Field):
         if value is None and self.optional:
             return None
         if type(value) not in self.types:
-            raise ValueError("Must be of {} type got {} instead".format(
+            raise ValueError('Must be of {} type got {} instead'.format(
                 self.types, type(value)))
         return value
 
@@ -406,7 +406,7 @@ class RegexpStringField(StringField):
         value = super(RegexpStringField, self).fromjson(value)
         if self.regexp is not None:
             if not self.regexp.match(value):
-                raise ValueError("Does not match regular expression")
+                raise ValueError('Does not match regular expression')
         return value
 
 

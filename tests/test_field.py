@@ -8,8 +8,6 @@ def test_simple():
         aaa = dicty.Field()
         bbb = dicty.Field('ccc')
 
-    assert isinstance(Object.aaa, dicty.Field)
-
     obj = Object()
     assert obj == {}
     obj.aaa = 111

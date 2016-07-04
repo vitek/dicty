@@ -232,3 +232,52 @@ Nested Objects
 
 
 .. _CornerApp: https://cornerapp.com/
+
+
+Mongo-style key pathes
+======================
+
+Dicty allows to build key pathes that can be used to create mongo query:
+
+ .. code-block:: python
+
+    class Foo(dicty.DictObject):
+        bar = dicty.Field('myBar')
+
+    print Foo.bar         # 'myBar' full path to the item
+    print Foo.bar.key     # 'myBar' only leaf key
+    print Foo.bar.attname # 'bar' python attribute name
+
+
+Nested object:
+
+ .. code-block:: python
+
+    class Bar(dicty.DictObject):
+        foo = dicty.TypedObjectField(Foo)
+
+    print Bar.foo            # 'foo'
+    print Bar.foo.bar        # 'foo.myBar'
+
+List of objects:
+
+ .. code-block:: python
+
+    class Bar(dicty.DictObject):
+        items = dicty.TypedListField(Foo)
+
+    print Bar.items.foo        # 'items.myBar' without index
+    print Bar.items[0].foo     # 'items.0.myBar' indexed path
+
+Dict of objects:
+
+ .. code-block:: python
+
+    class Bar(dicty.DictObject):
+        items = dicty.TypedDictField(Foo)
+
+    # With index
+    print Bar.items['maurice'].bar  # 'items.maurice.myBar'
+
+    # Would raise IndexError
+    print Bar.items['x.y'].bar

@@ -41,6 +41,35 @@ class cached_property(object):
         return value
 
 
+class DictyPath(unicode):
+    def __getattr__(self, attname):
+        top = self._field
+        if isinstance(top, BaseTypedField):
+            field = top.type._fields[attname]
+        else:
+            field = top._fields[attname]
+        return self._new('{}.{}'.format(self, field.key), field)
+
+    @classmethod
+    def _new(cls, value, field):
+        # TODO: implement object caching and check for name clashing
+        obj = cls(value)
+        obj.key = field.key
+        obj.attname = field.attname
+        obj._field = field
+        return obj
+
+
+class DictyItemPath(DictyPath):
+    def __iter__(self):
+        return iter(unicode(self))
+
+    def __getitem__(self, key):
+        if type(key) in (unicode, str) and '.' in key:
+            raise IndexError('Dot is not allowed in key')
+        return self._new('{}.{}'.format(self, key), self._field)
+
+
 def base_with_metaclass(meta):
     def new_class(cls):
         return type.__new__(meta, cls.__name__, (cls,), {'__metaclass__': meta})
@@ -130,6 +159,7 @@ class DictObject(dict):
 class Field(object):
     attname = None   # Python attribute name
     key = None       # Dictionary key
+    path_class = DictyPath
 
     def __init__(self, key=None, filters=(), optional=False,
                  default=None, default_func=None):
@@ -144,7 +174,7 @@ class Field(object):
 
     def __get__(self, obj, type=None):
         if obj is None:
-            return self
+            return self.path_class._new(self.key, self)
         try:
             return obj[self.key]
         except KeyError:
@@ -211,7 +241,7 @@ class ShadowField(Field):
 
     def __get__(self, obj, type=None):
         if obj is None:
-            return self
+            return self.path_class._new(self.key, self)
         try:
             return obj._shadow[self.attname]
         except KeyError:
@@ -276,6 +306,8 @@ class TypedObjectField(BaseTypedField):
 
 
 class TypedListField(BaseTypedField):
+    path_class = DictyItemPath
+
     def fromjson(self, value):
         if not isinstance(value, list):
             raise ValueError("must be list")
@@ -300,6 +332,8 @@ class TypedListField(BaseTypedField):
 
 
 class TypedDictField(BaseTypedField):
+    path_class = DictyItemPath
+
     def fromjson(self, value):
         if not isinstance(value, dict):
             raise ValueError("must be dict")

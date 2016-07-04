@@ -6,7 +6,6 @@ import dicty
 def test_shadow():
     class Object(dicty.DictObject):
         foo = dicty.ShadowField()
-    assert isinstance(Object.foo, dicty.Field)
 
     obj = Object()
     with pytest.raises(AttributeError):

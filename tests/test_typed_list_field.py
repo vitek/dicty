@@ -16,7 +16,7 @@ def test_basic():
     with pytest.raises(dicty.FieldError) as exc:
         obj = Object.fromjson({'nested': [{}]})
     assert exc.value.path == 'nested[0].foo'
-    assert exc.value.message == 'Is required'
+    assert exc.value.args == ('Is required',)
 
     obj = Object()
     assert obj.nested == []
@@ -27,4 +27,4 @@ def test_basic():
     with pytest.raises(dicty.FieldError) as exc:
         Object.fromjson({'nested': 123})
     assert exc.value.path == 'nested'
-    assert exc.value.message == 'must be list'
+    assert exc.value.args == ('must be list',)

@@ -43,5 +43,6 @@ def test_subclass_duplicate_errors():
     with pytest.raises(dicty.DictyRuntimeError) as exc:
         class B(A):
             a = dicty.Field('b')
-    assert exc.value.message == (
-        'Duplicate declaration of \'a\' field with key \'b\'')
+    assert exc.value.args == (
+        'Duplicate declaration of \'a\' field with key \'b\'',
+    )

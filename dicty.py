@@ -2,26 +2,36 @@ import datetime
 import re
 import sys
 
+import six
 
-class FieldError(ValueError):
-    def __init__(self, path, message):
+
+class FieldError(Exception):
+    def __init__(self, message, path=None):
         super(FieldError, self).__init__(message)
         self.path = path
 
     def __str__(self):
         if self.path:
-            return '{}: {}'.format(self.path, self.message)
+            return '{}: {}'.format(self.path, self.args[0])
         else:
-            return self.message
+            return self.args[0]
+
+    def add_path_info(self, path):
+        if self.path:
+            if self.path[:1] == '[':
+                path = path + self.path
+            else:
+                path = path + '.' + self.path
+        self.path = path
 
     @classmethod
-    def nested(cls, path, exc):
-        if isinstance(exc, FieldError):
-            if exc.path[:1] == '[':
-                path = path + exc.path
-            else:
-                path = path + '.' + exc.path
-        return cls(path, exc.message)
+    def raise_from(cls, exc, path=None):
+        obj = cls(str(exc), path)
+        if six.PY3:
+            six.raise_from(obj, exc)
+        else:
+            _, _, tb = sys.exc_info()
+            six.reraise(cls, obj, tb)
 
 
 class DictyRuntimeError(Exception):
@@ -41,7 +51,7 @@ class cached_property(object):
         return value
 
 
-class DictyPath(unicode):
+class DictyPath(six.text_type):
     def __getattr__(self, attname):
         top = self._field
         if isinstance(top, BaseTypedField):
@@ -62,17 +72,17 @@ class DictyPath(unicode):
 
 class DictyItemPath(DictyPath):
     def __iter__(self):
-        return iter(unicode(self))
+        return iter(six.text_type(self))
 
     def __getitem__(self, key):
-        if type(key) in (unicode, str) and '.' in key:
+        if type(key) in (six.text_type, six.binary_type) and '.' in key:
             raise IndexError('Dot is not allowed in key')
         return self._new('{}.{}'.format(self, key), self._field)
 
 
 def base_with_metaclass(meta):
     def new_class(cls):
-        return type.__new__(meta, cls.__name__, (cls,), {'__metaclass__': meta})
+        return type.__new__(meta, cls.__name__, (cls,), {})
     return new_class
 
 
@@ -89,7 +99,7 @@ class JSONMetaObject(type):
                 lookup_attrs.append(base.__dict__)
 
         for type_attrs in lookup_attrs:
-            for attname, value in type_attrs.iteritems():
+            for attname, value in six.iteritems(type_attrs):
                 if isinstance(value, Field):
                     if value.attname is None:
                         value.attname = attname
@@ -129,7 +139,7 @@ class JSONMetaObject(type):
 class DictObject(dict):
     def __init__(self, **kwargs):
         self._shadow = {}
-        for key, value in kwargs.iteritems():
+        for key, value in six.iteritems(kwargs):
             if key not in self._fields:
                 raise AttributeError('Unknown field `{}` given'.format(key))
             setattr(self, key, value)
@@ -138,12 +148,12 @@ class DictObject(dict):
         return self._fields[attname].key in self
 
     def validate(self):
-        for prop in self._fields.itervalues():
+        for prop in six.itervalues(self._fields):
             prop.validate(self)
 
     def jsonize(self):
         json = {}
-        for field in self._fields.itervalues():
+        for field in six.itervalues(self._fields):
             if field.key in self:
                 json[field.key] = field.jsonize(self)
         return json
@@ -213,12 +223,14 @@ class Field(object):
         if self.key in obj:
             try:
                 self.run_filters(obj)
-            except ValueError, e:
-                _, _, tb = sys.exc_info()
-                raise FieldError.nested(self.key, e), None, tb
+            except ValueError as exc:
+                FieldError.raise_from(exc, self.key)
+            except FieldError as exc:
+                exc.add_path_info(self.key)
+                raise
         else:
             if not self.optional:
-                raise FieldError(self.key, 'Is required')
+                raise FieldError('Is required', self.key)
 
     def jsonize(self, obj):
         return obj[self.key]
@@ -273,7 +285,7 @@ class DateField(DatetimeField):
 
 class BaseTypedField(Field):
     def __init__(self, type, *args, **kwargs):
-        if isinstance(type, basestring):
+        if isinstance(type, six.string_types):
             self.type_reference = type
         else:
             self.type = type
@@ -287,7 +299,10 @@ class BaseTypedField(Field):
     def instantiate(self, value):
         if self.is_json_object:
             return self.type.fromjson(value)
-        return self.type(value)
+        try:
+            return self.type(value)
+        except ValueError as exc:
+            FieldError.raise_from(exc)
 
 
 class TypedObjectField(BaseTypedField):
@@ -298,7 +313,7 @@ class TypedObjectField(BaseTypedField):
 
     def fromjson(self, value):
         if not isinstance(value, dict):
-            raise ValueError('must be dictionary')
+            raise FieldError('must be dictionary')
         return self.instantiate(value)
 
     def jsonize(self, obj):
@@ -310,14 +325,14 @@ class TypedListField(BaseTypedField):
 
     def fromjson(self, value):
         if not isinstance(value, list):
-            raise ValueError('must be list')
+            raise FieldError('must be list')
         retval = []
         for no, item in enumerate(value):
             try:
                 retval.append(self.instantiate(item))
-            except ValueError, e:
-                _, _, tb = sys.exc_info()
-                raise FieldError.nested('[{}]'.format(no), e), None, tb
+            except FieldError as exc:
+                exc.add_path_info('[{}]'.format(no))
+                raise
         return retval
 
     def getdefault(self, obj):
@@ -336,14 +351,14 @@ class TypedDictField(BaseTypedField):
 
     def fromjson(self, value):
         if not isinstance(value, dict):
-            raise ValueError('must be dict')
+            raise FieldError('must be dict')
         retval = {}
-        for key, item in value.iteritems():
+        for key, item in six.iteritems(value):
             try:
                 retval[key] = self.instantiate(item)
-            except ValueError, e:
-                _, _, tb = sys.exc_info()
-                raise FieldError.nested('[{}]'.format(repr(key)), e), None, tb
+            except FieldError as exc:
+                exc.add_path_info('[{}]'.format(repr(key)))
+                raise
         return retval
 
     def getdefault(self, obj):
@@ -353,7 +368,7 @@ class TypedDictField(BaseTypedField):
 
     def jsonize(self, obj):
         return {key: self.type.jsonize(value)
-                for key, value in obj[self.key].iteritems()}
+                for key, value in six.iteritems(obj[self.key])}
 
 
 class BasicTypeField(Field):
@@ -366,19 +381,23 @@ class BasicTypeField(Field):
         if value is None and self.optional:
             return None
         if type(value) not in self.types:
-            raise ValueError('Must be of {} type got {} instead'.format(
-                self.types, type(value)))
+            raise FieldError(
+                'Must be of {} type got {} instead'.format(
+                    self.types, type(value)
+                )
+            )
         return value
 
 
 class IntegerField(BasicTypeField):
     def __init__(self, *args, **kwargs):
-        super(IntegerField, self).__init__((int, long), *args, **kwargs)
+        super(IntegerField, self).__init__(six.integer_types, *args, **kwargs)
 
 
 class NumberField(BasicTypeField):
     def __init__(self, *args, **kwargs):
-        super(NumberField, self).__init__((int, long, float), *args, **kwargs)
+        super(NumberField, self).__init__(
+            six.integer_types + (float,), *args, **kwargs)
 
 
 class FloatField(BasicTypeField):
@@ -388,7 +407,8 @@ class FloatField(BasicTypeField):
 
 class StringField(BasicTypeField):
     def __init__(self, *args, **kwargs):
-        super(StringField, self).__init__((unicode, str), *args, **kwargs)
+        super(StringField, self).__init__(
+            (six.text_type, six.binary_type), *args, **kwargs)
 
 
 class RegexpStringField(StringField):
@@ -397,7 +417,7 @@ class RegexpStringField(StringField):
     def __init__(self, *args, **kwargs):
         if 'regexp' in kwargs:
             regexp = kwargs.pop('regexp')
-            if isinstance(regexp, basestring):
+            if isinstance(regexp, six.string_types):
                 regexp = re.compile(regexp)
             self.regexp = regexp
         super(RegexpStringField, self).__init__(*args, **kwargs)
@@ -406,7 +426,7 @@ class RegexpStringField(StringField):
         value = super(RegexpStringField, self).fromjson(value)
         if self.regexp is not None:
             if not self.regexp.match(value):
-                raise ValueError('Does not match regular expression')
+                raise FieldError('Does not match regular expression')
         return value
 
 

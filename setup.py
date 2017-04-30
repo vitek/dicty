@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     url='https://github.com/vitek/dicty',
     py_modules=['dicty'],
-    install_requires=[''],
+    install_requires=['six'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     test_suite='tests',

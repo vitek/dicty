@@ -38,7 +38,7 @@ def test_simple():
     with pytest.raises(dicty.FieldError) as exc:
         obj = Object.fromjson({'aaa': 111, 'zzz': 333})
     assert exc.value.path == 'ccc'
-    assert exc.value.message == 'Is required'
+    assert exc.value.args == ('Is required',)
 
 
 def test_field_deletion():

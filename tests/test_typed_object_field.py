@@ -16,7 +16,7 @@ def test_typed_object_field():
     with pytest.raises(dicty.FieldError) as exc:
         obj = Object.fromjson({'nested': {}})
     assert exc.value.path == 'nested.foo'
-    assert exc.value.message == 'Is required'
+    assert exc.value.args == ('Is required',)
 
     obj = Object()
     assert obj.nested == {}
@@ -27,7 +27,7 @@ def test_typed_object_field():
     with pytest.raises(dicty.FieldError) as exc:
         Object.fromjson({'nested': 123})
     assert exc.value.path == 'nested'
-    assert exc.value.message == 'must be dictionary'
+    assert exc.value.args == ('must be dictionary',)
 
 
 def test_references():

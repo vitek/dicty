@@ -6,7 +6,7 @@ with io.open('README.rst', 'rt', encoding="utf-8") as readme_file:
 
 setup(
     name='dicty',
-    version='0.1',
+    version='0.1.1',
     author='Victor Makarov',
     author_email='vitja.makarov@gmail.com',
     description='A library for mapping dictionaries to Python objects',

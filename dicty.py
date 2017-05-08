@@ -34,7 +34,7 @@ class FieldError(Exception):
             six.reraise(cls, obj, tb)
 
 
-class DictyRuntimeError(Exception):
+class DictyRuntimeError(RuntimeError):
     pass
 
 
@@ -111,9 +111,16 @@ class JSONMetaObject(type):
         fields_index = {}
         for field in fields:
             if field.attname in fields_index or field.key in keys_seen:
+                if not field.override:
+                    raise DictyRuntimeError(
+                        'Duplicate declaration of {!r} field with key {!r}'
+                        .format(field.attname, field.key)
+                    )
+            elif field.override:
                 raise DictyRuntimeError(
-                    'Duplicate declaration of {} field with key {}'.format(
-                        repr(field.attname), repr(field.key)))
+                    'Invalid override specified for field {!r}'
+                    .format(field.attname)
+                )
             fields_index[field.attname] = field
             keys_seen.add(field.key)
         attrs['_fields'] = fields_index
@@ -171,10 +178,11 @@ class Field(object):
     key = None       # Dictionary key
     path_class = DictyPath
 
-    def __init__(self, key=None, filters=(), optional=False,
+    def __init__(self, key=None, filters=(), optional=False, override=False,
                  default=None, default_func=None):
         self.key = key
         self.optional = optional
+        self.override = override
         self.filters = filters
         self._default = default
         self._default_func = default_func
@@ -357,7 +365,7 @@ class TypedDictField(BaseTypedField):
             try:
                 retval[key] = self.instantiate(item)
             except FieldError as exc:
-                exc.add_path_info('[{}]'.format(repr(key)))
+                exc.add_path_info('[{!r}]'.format(key))
                 raise
         return retval
 

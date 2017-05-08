@@ -10,6 +10,23 @@ def test_duplicate_keys():
             bar = dicty.Field('foo')
 
 
+def test_field_override():
+    class A(dicty.DictObject):
+        bar = dicty.Field(default='a')
+
+    class B(A):
+        bar = dicty.Field(default='b', optional=True, override=True)
+
+    obj = B()
+    assert obj.bar == 'b'
+
+
+def test_field_override_error():
+    with pytest.raises(dicty.DictyRuntimeError):
+        class A(dicty.DictObject):
+            bar = dicty.Field(override=True)
+
+
 def test_subclasses():
     class A(dicty.DictObject):
         a = dicty.Field()

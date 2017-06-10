@@ -388,7 +388,7 @@ class BasicTypeField(Field):
         # XXX
         if value is None and self.optional:
             return None
-        if type(value) not in self.types:
+        if not isinstance(value, self.types):
             raise FieldError(
                 'Must be of {} type got {} instead'.format(
                     self.types, type(value)
@@ -402,9 +402,9 @@ class IntegerField(BasicTypeField):
         super(IntegerField, self).__init__(six.integer_types, *args, **kwargs)
 
 
-class NumberField(BasicTypeField):
+class NumericField(BasicTypeField):
     def __init__(self, *args, **kwargs):
-        super(NumberField, self).__init__(
+        super(NumericField, self).__init__(
             six.integer_types + (float,), *args, **kwargs)
 
 

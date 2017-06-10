@@ -168,7 +168,7 @@ Dicty is shipped with the follwing:
 
 `NativeDatetimeField`
 
-`NumberField`
+`NumericField`
 
 `RegexpStringField`
 
